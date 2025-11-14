@@ -1,2 +1,7 @@
 # pyceptron
-Perceptron implemented in Python
+
+A perceptron implemented in Python for classifying water potability.
+
+## Status
+
+WIP
