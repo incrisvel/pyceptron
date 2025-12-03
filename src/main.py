@@ -5,38 +5,39 @@ def start():
     read_from_csv()
 
 def read_from_csv():
-    with open('data/water_potability.csv', newline = '') as data:
+    with open('data/water_clean.csv', newline = '') as data:
         water_data = DictReader(data)
-
-        rows = []
-        for i, row in enumerate(water_data):
-            if i >= 6:
-                break
-            rows.append(row)
 
         pyceptron = Pyceptron(water_data.fieldnames[:-1])
 
         dataset = []
         answers = []
 
-        # for row in water_data:
-        #     data, answer = row_to_dict(row)
-        #     dataset.append(data)
-        #     answers.append(answer)
+        rows = list(water_data)
+        split_index = int(len(rows) * 0.8)
+        train_rows = rows[:split_index]
+        test_rows = rows[split_index:]
 
-        for row in rows[:5]:
-            data, label = row_to_dict(row)
+        for row in train_rows:
+            data, answer = row_to_dict(row)
             dataset.append(data)
-            answers.append(label)
+            answers.append(answer)
 
         pyceptron.train(dataset, answers)
 
-        test_data, test_label = row_to_dict(rows[5])
-        prediction = pyceptron.guess(test_data)
+        correct_guesses = 0
+        total_guesses = 0
 
-        print("Entrada:", test_data)
-        print("Resposta certa:", test_label)
-        print("Resposta Pyceptron:", prediction)
+        for row in test_rows:
+            test_data, test_label = row_to_dict(row)
+            prediction = pyceptron.guess(test_data)
+
+            if prediction == test_label:
+                correct_guesses += 1
+            total_guesses += 1
+
+        print(f"Acertos: {correct_guesses}/{total_guesses} = {correct_guesses/total_guesses:.2%}")
+
 
 def row_to_dict(row):
     data = {}

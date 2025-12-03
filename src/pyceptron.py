@@ -5,7 +5,7 @@ class Pyceptron:
         self.learning_rate = 0.1 # ajuste nos pesos em caso de resposta incorreta
         self.epochs = 1 # quantidade de vezes que o modelo vê os dados de treino
         self.weights = {name: 0 for name in inputs} # {nome_campo : peso_inicial}
-        self.bias = 0
+        self.bias = 0 # viés inicial
 
     def net_input(self, values_dict):
         sum = 0
