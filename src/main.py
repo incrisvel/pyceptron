@@ -1,56 +1,56 @@
-from csv import DictReader
+from kfold import KFold
+from models.set import PyceptronSet
 from pyceptron import Pyceptron
+from reader import Reader 
+
+
+K_VALUE = 5
 
 def start():
-    read_from_csv()
+    normalized_dataset = Reader.read_from_csv("data/water_potability.csv")
+    Reader.shuffle_dataset(normalized_dataset)
 
-def read_from_csv():
-    with open('data/water_clean.csv', newline = '') as data:
-        water_data = DictReader(data)
+    kfold = KFold(normalized_dataset, k_folds=K_VALUE)
+    
+    feature_names = list(normalized_dataset[0].get_features().keys())
+    all_accuracies = []
+    
+    for index in range(K_VALUE):
+        print(f"\nFOLD {index + 1}/{K_VALUE}")
+        
+        sets = kfold.get_sets_for_fold(index)
+        train_set = sets.train
+        test_set = sets.test
 
-        pyceptron = Pyceptron(water_data.fieldnames[:-1])
+        pyceptron = Pyceptron(feature_names=feature_names) 
+        pyceptron.train(train_set.features, train_set.labels)
 
-        dataset = []
-        answers = []
+        accuracy = test_fold(index, pyceptron, test_set)
+        all_accuracies.append(accuracy)
 
-        rows = list(water_data)
-        split_index = int(len(rows) * 0.8)
-        train_rows = rows[:split_index]
-        test_rows = rows[split_index:]
-
-        for row in train_rows:
-            data, answer = row_to_dict(row)
-            dataset.append(data)
-            answers.append(answer)
-
-        pyceptron.train(dataset, answers)
-
-        correct_guesses = 0
-        total_guesses = 0
-
-        for row in test_rows:
-            test_data, test_label = row_to_dict(row)
-            prediction = pyceptron.guess(test_data)
-
-            if prediction == test_label:
-                correct_guesses += 1
-            total_guesses += 1
-
-        print(f"Acertos: {correct_guesses}/{total_guesses} = {correct_guesses/total_guesses:.2%}")
+    avg_accuracy = sum(all_accuracies) / len(all_accuracies)
+    print("\nRESULTADOS FINAIS")
+    print(f"Acurácias por Fold: {[f'{acc:.2%}' for acc in all_accuracies]}")
+    print(f"Acurácia Média ({K_VALUE}-fold): {avg_accuracy:.2%}")
 
 
-def row_to_dict(row):
-    data = {}
+def test_fold(fold: int, pyceptron: Pyceptron, test: PyceptronSet) -> float:
+    correct_guesses = 0
+    total_guesses = 0
 
-    for key, value in row.items():
-        if key == "Potability": # ignorar coluna de resposta
-            continue
+    for test_data, test_label in zip(test.features, test.labels):
+        prediction = pyceptron.guess(test_data)
 
-        data[key] = float(value) if value != "" else 0.0
+        if prediction == test_label:
+            correct_guesses += 1
+        total_guesses += 1
 
-    correct_answer = int(row["Potability"])
+    accuracy = calculate_accuracy(correct_guesses, total_guesses)
+    print(f"Acertos no Fold {fold + 1}: {correct_guesses}/{total_guesses} = {accuracy:.2%}")
+    return accuracy
 
-    return data, correct_answer # deixar cada linha no formato ({dados}, resposta)
+def calculate_accuracy(correct: int, total: int):
+    return correct / total
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     start()
